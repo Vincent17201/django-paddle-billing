@@ -232,7 +232,7 @@ class Customer(PaddleBaseModel):
                 "data": data.dict(),
                 "custom_data": data.custom_data,
             }
-            user = UserModel.objects.filter(email=data.email).first()
+            user = UserModel.objects.filter(email__iexact=data.email).first()
             if user is not None:
                 defaults["user_id"] = user.pk
 
@@ -468,14 +468,15 @@ class Subscription(PaddleBaseModel):
 
     @classmethod
     def from_paddle_data(cls, data, occurred_at=None):
+        account_identifier_key = settings.PADDLE_ACCOUNT_MODEL_IDENTIFIER
         error = None
-        if data.custom_data is None or "account_id" not in data.custom_data:
+        if data.custom_data is None or account_identifier_key not in data.custom_data:
             error = "Subscription: custom_data is None or account_id not in custom_data"
             # raise Exception('Subscription: custom_data is None or account_id not in custom_data')
             return None, False, error
 
-        if not get_account_model().objects.filter(pk=int(data.custom_data["account_id"])).exists():
-            error = "Subscription: Account with id: {} does not exist".format(data.custom_data["account_id"])
+        if not get_account_model().objects.filter(pk=int(data.custom_data[account_identifier_key])).exists():
+            error = "Subscription: Account with id: {} does not exist".format(data.custom_data[account_identifier_key])
             # raise Exception('Subscription: Account with id: {} does not exist'.format(data.custom_data['account_id']))
             return None, False, error
 
@@ -483,7 +484,7 @@ class Subscription(PaddleBaseModel):
             _subscription, created = cls.update_or_create(
                 query={"pk": data.id},
                 defaults={
-                    "account_id": data.custom_data["account_id"],
+                    "account_id": data.custom_data[account_identifier_key],
                     "customer_id": data.customer_id,
                     "address_id": data.address_id,
                     "business_id": data.business_id,
