@@ -435,8 +435,9 @@ class Subscription(PaddleBaseModel):
         choices=[
             ("active", "Active"),
             ("trialing", "Trialing"),
+            ("past_due", "Past Due"),
             ("paused", "Paused"),
-            ("deleted", "Deleted"),
+            ("canceled", "Canceled"),
         ],
     )
     products = models.ManyToManyField(Product, related_name="subscriptions")
