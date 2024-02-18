@@ -238,7 +238,7 @@ class Customer(PaddleBaseModel):
                 if data.custom_data is None or account_identifier_key not in data.custom_data:
                     error = f"Customer: custom_data '{data.custom_data}' is None or identifier '{account_identifier_key}' not in custom_data"
                     raise Exception(error)
-                if not get_account_model().objects.filter(pk=int(data.custom_data[account_identifier_key])).exists():
+                if not get_account_model().objects.filter(pk=data.custom_data[account_identifier_key]).exists():
                     error = "Customer: Account with id: {} does not exist".format(data.custom_data[account_identifier_key])
                     raise Exception(error)
                 user = UserModel.objects.filter(pk=data.custom_data[account_identifier_key]).first()
@@ -489,7 +489,7 @@ class Subscription(PaddleBaseModel):
             # raise Exception('Subscription: custom_data is None or account_id not in custom_data')
             return None, False, error
 
-        if not get_account_model().objects.filter(pk=int(data.custom_data[account_identifier_key])).exists():
+        if not get_account_model().objects.filter(pk=data.custom_data[account_identifier_key]).exists():
             error = "Subscription: Account with id: {} does not exist".format(data.custom_data[account_identifier_key])
             # raise Exception('Subscription: Account with id: {} does not exist'.format(data.custom_data['account_id']))
             return None, False, error
