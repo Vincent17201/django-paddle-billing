@@ -232,7 +232,11 @@ class Customer(PaddleBaseModel):
                 "data": data.dict(),
                 "custom_data": data.custom_data,
             }
-            user = UserModel.objects.filter(email__iexact=data.email).first()
+            try:
+                user = UserModel.objects.filter(pk=data.custom_data[settings.PADDLE_ACCOUNT_MODEL_IDENTIFIER]).first()
+            except Exception as e:
+                print("trying to match customer to user model via custom data failed; trying now by email instead")
+                user = UserModel.objects.filter(email__iexact=data.email).first()
             if user is not None:
                 defaults["user_id"] = user.pk
 
