@@ -59,7 +59,7 @@ class AddressAdmin(ModelAdmin):
     }
 
     def has_change_permission(self, request, obj=None):
-        return app_settings.ADMIN_READONLY
+        return not app_settings.ADMIN_READONLY
 
 
 @admin.register(Business)
