@@ -232,9 +232,18 @@ class Customer(PaddleBaseModel):
                 "data": data.dict(),
                 "custom_data": data.custom_data,
             }
+            # matching customer to user acc
             try:
-                user = UserModel.objects.filter(pk=data.custom_data[settings.PADDLE_ACCOUNT_MODEL_IDENTIFIER]).first()
+                account_identifier_key = settings.PADDLE_ACCOUNT_MODEL_IDENTIFIER
+                if data.custom_data is None or account_identifier_key not in data.custom_data:
+                    error = f"Customer: custom_data '{data.custom_data}' is None or identifier '{account_identifier_key}' not in custom_data"
+                    raise Exception(error)
+                if not get_account_model().objects.filter(pk=int(data.custom_data[account_identifier_key])).exists():
+                    error = "Customer: Account with id: {} does not exist".format(data.custom_data[account_identifier_key])
+                    raise Exception(error)
+                user = UserModel.objects.filter(pk=data.custom_data[account_identifier_key]).first()
             except Exception as e:
+                print("Exception@Customer --> from_paddle_data", e)
                 print("trying to match customer to user model via custom data failed; trying now by email instead")
                 user = UserModel.objects.filter(email__iexact=data.email).first()
             if user is not None:
