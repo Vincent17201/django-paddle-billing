@@ -19,6 +19,8 @@ from django_paddle_billing.encoders import PrettyJSONEncoder
 from django_paddle_billing.exceptions import DjangoPaddleBillingError
 from django_paddle_billing.utils import get_account_model
 
+import traceback
+
 paddle_client = PaddleApiClient(
     base_url=settings.PADDLE_API_URL,
     authentication_method=HeaderAuthentication(token=settings.PADDLE_API_TOKEN),
@@ -257,6 +259,7 @@ class Customer(PaddleBaseModel):
 
             return instance, created, None
         except Exception as e:
+            traceback.print_exc()
             return None, False, e
 
     @classmethod
@@ -267,7 +270,7 @@ class Customer(PaddleBaseModel):
         error = 0
         for customers in cls.api_list_customers_generator():
             for customer_data in customers.data:
-                _customer, created, _error = cls.from_paddle_data(customer_data)
+                _customer, _created, _error = cls.from_paddle_data(customer_data)
                 if include_addresses:
                     _customer.sync_addresses_from_paddle()
                 if include_businesses:
@@ -276,7 +279,7 @@ class Customer(PaddleBaseModel):
                     _customer.sync_subscription_from_paddle()
                 if _error:
                     error += 1
-                elif created:
+                elif _created:
                     created += 1
                 else:
                     updated += 1
