@@ -263,7 +263,7 @@ class Customer(PaddleBaseModel):
             return None, False, e
 
     @classmethod
-    def sync_from_paddle(cls, include_addresses=True, include_businesses=True, include_subscriptions=True):
+    def sync_from_paddle(cls):
         print("Sync Customers from Paddle")
         created = 0
         updated = 0
@@ -271,11 +271,11 @@ class Customer(PaddleBaseModel):
         for customers in cls.api_list_customers_generator():
             for customer_data in customers.data:
                 _customer, _created, _error = cls.from_paddle_data(customer_data)
-                if include_addresses:
+                if settings.SYNC_AND_WEBHOOK_CUSTOMER_INCLUDE_ADDRESSES:
                     _customer.sync_addresses_from_paddle()
-                if include_businesses:
+                if settings.SYNC_AND_WEBHOOK_CUSTOMER_INCLUDE_BUSINESSES:
                     _customer.sync_businesses_from_paddle()
-                if include_subscriptions:
+                if settings.SYNC_CUSTOMER_INCLUDE_SUBSCRIPTIONS:
                     _customer.sync_subscription_from_paddle()
                 if _error:
                     error += 1
@@ -498,17 +498,20 @@ class Subscription(PaddleBaseModel):
             return None, False, error
 
         try:
+            defaults = {
+                "account_id": data.custom_data[account_identifier_key],
+                "customer_id": data.customer_id,
+                "status": data.status,
+                "data": data.dict(),
+                "custom_data": data.custom_data,
+            }
+            if settings.SYNC_AND_WEBHOOK_CUSTOMER_INCLUDE_ADDRESSES:
+                defaults["address_id"] = data.address_id
+            if settings.SYNC_AND_WEBHOOK_CUSTOMER_INCLUDE_BUSINESSES:
+                defaults["business_id"] = data.business_id
             _subscription, created = cls.update_or_create(
                 query={"pk": data.id},
-                defaults={
-                    "account_id": data.custom_data[account_identifier_key],
-                    "customer_id": data.customer_id,
-                    "address_id": data.address_id,
-                    "business_id": data.business_id,
-                    "status": data.status,
-                    "data": data.dict(),
-                    "custom_data": data.custom_data,
-                },
+                defaults=defaults,
                 occurred_at=occurred_at,
             )
             product_ids = [item.price.product_id for item in data.items]
