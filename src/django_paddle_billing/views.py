@@ -11,6 +11,7 @@ from paddle_billing_client.models.notification import NotificationPayload
 from django_paddle_billing.settings import settings as app_settings #  need to be imported this way to work as dict
 from django_paddle_billing import signals
 
+from ipware import get_client_ip
 
 @method_decorator(csrf_exempt, name="dispatch")
 class PaddleWebhookView(View):
@@ -76,13 +77,19 @@ class PaddleWebhookView(View):
         - sending a django signal for each of the SUPPORTED_WEBHOOKS
         """
         payload = request.body.decode("utf-8")
-        print("request.META", request.META)
-        paddle_ip = request.META.get("HTTP_X_FORWARDED_FOR", "")
-        print("paddle_ip", paddle_ip)
-        if app_settings["PADDLE_SANDBOX"] and paddle_ip not in app_settings["PADDLE_SANDBOX_IPS"]:
-            return HttpResponseBadRequest("IP not allowed")
-        elif not app_settings["PADDLE_SANDBOX"] and paddle_ip not in app_settings["PADDLE_IPS"]:
-            return HttpResponseBadRequest("IP not allowed")
+        paddle_ip, is_routable = get_client_ip(request, request_header_order=['HTTP_X_FORWARDED_FOR'])
+        if paddle_ip is None:
+            return HttpResponseBadRequest("Unable to get IP address")
+        else:
+            if is_routable:
+                # The client's IP address is publicly routable on the Internet
+                print("paddle_ip", paddle_ip)
+                if app_settings["PADDLE_SANDBOX"] and paddle_ip not in app_settings["PADDLE_SANDBOX_IPS"]:
+                    return HttpResponseBadRequest("IP not allowed")
+                elif not app_settings["PADDLE_SANDBOX"] and paddle_ip not in app_settings["PADDLE_IPS"]:
+                    return HttpResponseBadRequest("IP not allowed")
+            else:
+                return HttpResponseBadRequest("IP address is private")
 
         is_valid = validate_webhook_signature(
             request.META.get("HTTP_PADDLE_SIGNATURE", ""), request.body, app_settings["PADDLE_SECRET_KEY"]

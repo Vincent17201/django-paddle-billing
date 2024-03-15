@@ -15,6 +15,9 @@ CONFIG_DEFAULTS = {
         "44.241.183.62",
         "100.20.172.113",
     ],
+    #34.194.127.46,100.64.0.173, 100.64.7.96, 100.64.7.216
+
+
     "PADDLE_SANDBOX": False,
     "PADDLE_ACCOUNT_MODEL": settings.AUTH_USER_MODEL,
     "ADMIN_READONLY": True,
